@@ -25,7 +25,7 @@ public class Token {
         this.begin = begin;
         this.end = end;
     }
-
+    
     public int getId() {
         return id;
     }

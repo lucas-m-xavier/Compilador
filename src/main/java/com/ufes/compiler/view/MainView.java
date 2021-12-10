@@ -53,7 +53,7 @@ public class MainView extends javax.swing.JFrame {
         jLabel2.setFont(new java.awt.Font("Arial Black", 2, 18)); // NOI18N
         jLabel2.setText("Análise Léxica");
 
-        jLabel3.setFont(new java.awt.Font("Ink Free", 1, 36)); // NOI18N
+        jLabel3.setFont(new java.awt.Font("Ink Free", 1, 48)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(86, 135, 247));
         jLabel3.setText("Pascalzaum");
 
@@ -123,8 +123,8 @@ public class MainView extends javax.swing.JFrame {
                                         .addGap(210, 210, 210)
                                         .addComponent(jLabel2))
                                     .addGroup(layout.createSequentialGroup()
-                                        .addGap(60, 60, 60)
-                                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                        .addGap(14, 14, 14)
+                                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 286, javax.swing.GroupLayout.PREFERRED_SIZE)))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 46, Short.MAX_VALUE)
                                 .addComponent(btn, javax.swing.GroupLayout.PREFERRED_SIZE, 144, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(26, 26, 26))))
@@ -146,8 +146,7 @@ public class MainView extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(5, 5, 5)
-                                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jLabel2)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
