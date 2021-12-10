@@ -5,6 +5,12 @@
  */
 package com.ufes.compiler.view;
 
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+
 /**
  *
  * @author Lucas
@@ -206,4 +212,44 @@ public class MainView extends javax.swing.JFrame {
     private javax.swing.JTable tblErros;
     private javax.swing.JTable tblLexica;
     // End of variables declaration//GEN-END:variables
+
+    public JButton getBtn() {
+        return btn;
+    }
+
+    public JLabel getjLabel2() {
+        return jLabel2;
+    }
+
+    public JLabel getjLabel3() {
+        return jLabel3;
+    }
+
+    public JLabel getjLabel4() {
+        return jLabel4;
+    }
+
+    public JScrollPane getjScrollPane1() {
+        return jScrollPane1;
+    }
+
+    public JScrollPane getjScrollPane2() {
+        return jScrollPane2;
+    }
+
+    public JScrollPane getjScrollPane3() {
+        return jScrollPane3;
+    }
+
+    public JTextArea getTa() {
+        return ta;
+    }
+
+    public JTable getTblErros() {
+        return tblErros;
+    }
+
+    public JTable getTblLexica() {
+        return tblLexica;
+    }
 }
