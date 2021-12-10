@@ -5,7 +5,10 @@
  */
 package com.ufes.compiler.presenter;
 
+import com.ufes.compiler.lexicon.LexiconHandler;
+import com.ufes.compiler.lexicon.type.Char;
 import com.ufes.compiler.model.CodeLine;
+import com.ufes.compiler.model.ErrorCollection;
 import com.ufes.compiler.model.Token;
 import com.ufes.compiler.view.MainView;
 import java.awt.event.ActionEvent;
@@ -20,6 +23,7 @@ import javax.swing.table.DefaultTableModel;
  */
 public class MainPresenter {
     private MainView view;
+    private ErrorCollection errorCollection;
     private List<Token> tokens;
     private List<CodeLine> lines;
 
@@ -40,7 +44,6 @@ public class MainPresenter {
     private String processCode(String code){
         code = code.replaceAll("\\(\\*([\\s\\S]*)\\*\\)", "");
         code = code.replaceAll("\\{([\\s\\S]*)\\}", "");
-        code = code.replaceAll("\\/\\/([\\s\\S]*)", "");
         code = code.replaceAll("\t", " ");
         code = code.replaceAll("\\[", " \\[ ");
         code = code.replaceAll("\\]", " \\] ");
@@ -60,6 +63,16 @@ public class MainPresenter {
         return code;
     }
     
+    private List<Token> chainAnaliseLexica(List<Token> tokens){
+        tokens.forEach((Token token) -> {
+            LexiconHandler handler = new Char(token);
+            
+            if (token.getCategory().equalsIgnoreCase("error") || token.getCategory().equalsIgnoreCase("undefined"))
+                this.errorCollection.addError(token, handler.getLexicalErrors(token));
+        });
+        return tokens;
+    }
+    
     private void compile(String sourceCode){
         int idToken = 1;
         int posLine = 1;
@@ -70,7 +83,7 @@ public class MainPresenter {
 
         for(String line : sourceCode.split("\n")){
             String aux = "";
-            CodeLine newLine = new CodeLine(line, posLine++);
+            CodeLine newLine = new CodeLine(line, posLine++).removeComment();
             lines.add(newLine);
             
             for(int flag = 0; flag < newLine.getContent().length(); flag++ ){
@@ -86,11 +99,8 @@ public class MainPresenter {
                 }
             }
         }
-        //this.tokens =  this.calcularPosicaoOriginal(tokens, codigoFonte);
         //this.tokens = this.chainAnaliseLexica(tokens);
         this.fillTable(tokens);
-        //this.gerenciadorErro = new AnalisadorSintatico(view).analiseSintatica(tokens, gerenciadorErro);
-        //this.preencheTabelaErro(tokens);
     }
     
     private void fillTable(List<Token> tokens){
@@ -101,14 +111,14 @@ public class MainPresenter {
             }
         }; 
         
-        for(Token token : tokens){
+        tokens.forEach(token -> {
             tableModel.addRow(new Object[]{
                 token.getId(),
                 token.getLine().getPosition(),
                 token.getSymbol(),
                 token.getCategory()
             });
-        }
+        });
         
         this.view.getTblLexica().setModel(tableModel);
     }

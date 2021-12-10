@@ -17,6 +17,14 @@ public class CodeLine {
         this.content = content;
         this.position = position;
     }
+    
+    public CodeLine removeComment(){
+        int posicaoBarras = content.indexOf("//");
+        if( posicaoBarras >= 0 )
+            content = content.substring(0, posicaoBarras);
+        
+        return this;
+    }
 
     public String getContent() {
         return content;
