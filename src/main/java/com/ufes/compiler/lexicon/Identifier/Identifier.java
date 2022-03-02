@@ -27,7 +27,7 @@ public class Identifier extends LexiconHandler {
     
     @Override
     public void execute(Token token) {
-        if (token.getSymbol().length() <= LexiconHandler.maxSize && Pattern.matches("[[A-Za-z]+|[_]+][[A-Za-z0-9]+|[_]+]*", token.getSymbol())){
+        if (token.getSymbol().length() <= LexiconHandler.maxSize && Pattern.matches("[[A-Za-zà-úÀ-Ú]+|[_]+][[A-Za-zà-úÀ-Ú0-9]+|[_]+]*", token.getSymbol())){
             token.setCategory("identificador");
         } else {
             this.setNext(new Error(token));

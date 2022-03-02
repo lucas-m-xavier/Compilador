@@ -28,10 +28,10 @@ public class End extends LexiconHandler {
         return next.getLexicalErrors(token);
     }
     
-    @Override
+    @Override//verificar end.
     public void execute(Token token) {
         if (token.getSymbol().toLowerCase().compareTo("end") == 0) 
             token.setCategory("end");
-        else this.setNext(new Var(token));
+        else this.setNext(new LastEnd(token));
     }
 }

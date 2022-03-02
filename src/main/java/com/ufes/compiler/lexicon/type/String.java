@@ -21,7 +21,7 @@ public class String extends LexiconHandler {
     
     @Override
     public java.lang.String getLexicalErrors(Token token) {
-        if(similarity(token.getSymbol(), "int") > 0.7)
+        if(similarity(token.getSymbol(), "string") > 0.7)
             return "Token pode ser substituido por STRING ";
         else if(similarity(token.getSymbol(), "string") > 0.5)
             return "Token semelhante a STRING; "+ next.getLexicalErrors(token);

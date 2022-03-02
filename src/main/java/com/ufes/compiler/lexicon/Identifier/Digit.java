@@ -27,6 +27,8 @@ public class Digit extends LexiconHandler {
     public void execute(Token token) {
         if (token.getSymbol().length() <= LexiconHandler.maxSize && Pattern.matches("[0-9]*", token.getSymbol()))
             token.setCategory("digito");
-        else this.setNext(new Identifier(token));
+        else if (token.getSymbol().length() <= LexiconHandler.maxSize && Pattern.matches("[0-9].*", token.getSymbol())){
+            token.setCategory("digito");
+        } else this.setNext(new Identifier(token));
     }
 }

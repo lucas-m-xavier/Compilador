@@ -33,6 +33,6 @@ public class Comma extends LexiconHandler {
     public void execute(Token token) {
         if (token.getSymbol().toLowerCase().compareTo(",") == 0) 
             token.setCategory("COMMA");
-        else this.setNext(new Digit(token));
+        else this.setNext(new OpenParenthesis(token));
     }
 }

@@ -33,6 +33,6 @@ public class Char extends LexiconHandler{
         if(token.getSymbol().equals("char"))
             token.setCategory("CHAR");
         else 
-            this.setNext(new Integer(token));
+            this.setNext(new Double(token));
     }
 }

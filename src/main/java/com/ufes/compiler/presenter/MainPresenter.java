@@ -9,6 +9,7 @@ import com.ufes.compiler.lexicon.LexiconHandler;
 import com.ufes.compiler.lexicon.type.Char;
 import com.ufes.compiler.model.CodeLine;
 import com.ufes.compiler.model.ErrorCollection;
+import com.ufes.compiler.model.ErrorMessage;
 import com.ufes.compiler.model.Token;
 import com.ufes.compiler.view.MainView;
 import java.awt.event.ActionEvent;
@@ -28,6 +29,7 @@ public class MainPresenter {
     private List<CodeLine> lines;
 
     public MainPresenter() {
+        this.errorCollection = new ErrorCollection();
         this.view = new MainView();
         this.view.setVisible(true);
         
@@ -55,10 +57,24 @@ public class MainPresenter {
         code = code.replaceAll("\\ \\n", "\\\n");
         code = code.replaceAll(";", " ; ");
         code = code.replaceAll(",", " , ");
+        code = code.replaceAll(":", " : ");
+        code = code.replaceAll("/", " / ");
+        code = code.replaceAll(": =", " := ");
+        code = code.replaceAll("\\+ = ", " \\+.= ");
+        code = code.replaceAll("\\+", " \\+ ");
+        code = code.replaceAll("\\+ \\.=", "\\+=");
+        code = code.replaceAll("-", " - ");
+        code = code.replaceAll("\\* = ", " \\*.= ");
+        code = code.replaceAll("\\*", " \\* ");
+        code = code.replaceAll("\\* \\.=", "\\*=");
         code = code.replaceAll("\\'", " \\' ");
         code = code.replaceAll("\\\"", " \\\" ");
-        code = code.replaceAll("\\&&", " \\&& ");
-        code = code.replaceAll("\\|\\|", " \\|\\| ");
+        code = code.replaceAll("\\< = ", " \\<.= ");
+        code = code.replaceAll("\\<", " \\< ");
+        code = code.replaceAll("\\< \\.=", "\\<=");
+        code = code.replaceAll("\\> = ", " \\>.= ");
+        code = code.replaceAll("\\>", " \\> ");
+        code = code.replaceAll("\\> \\.=", "\\>=");
         
         return code;
     }
@@ -66,7 +82,7 @@ public class MainPresenter {
     private List<Token> chainAnaliseLexica(List<Token> tokens){
         tokens.forEach((Token token) -> {
             LexiconHandler handler = new Char(token);
-            
+            //this.errorCollection = new ErrorCollection();
             if (token.getCategory().equalsIgnoreCase("error") || token.getCategory().equalsIgnoreCase("undefined"))
                 this.errorCollection.addError(token, handler.getLexicalErrors(token));
         });
@@ -99,8 +115,9 @@ public class MainPresenter {
                 }
             }
         }
-        //this.tokens = this.chainAnaliseLexica(tokens);
+        this.tokens = this.chainAnaliseLexica(tokens);
         this.fillTable(tokens);
+        this.fillErrorTable(tokens);
     }
     
     private void fillTable(List<Token> tokens){
@@ -121,5 +138,26 @@ public class MainPresenter {
         });
         
         this.view.getTblLexica().setModel(tableModel);
+    }
+    
+    private void fillErrorTable(List<Token> tokens){
+        DefaultTableModel modelTable = new DefaultTableModel(new Object[]{"Erro", "Linha", "Coluna", "Token"}, 0) {
+            @Override
+            public boolean isCellEditable(int rowIndex, int mColIndex) {
+                return false;
+            }
+        };
+        
+        for(ErrorMessage erro : this.errorCollection.getErrorList()){
+            modelTable.addRow(new Object[]{
+                erro.getErrorMessage(),
+                erro.getToken().getLine().getPosition(),
+                erro.getToken().getBegin(),
+                erro.getToken().getId()
+            });
+        }
+        
+        this.view.getTblExit().setModel(modelTable);
+        this.errorCollection = new ErrorCollection();
     }
 }

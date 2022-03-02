@@ -1,0 +1,38 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package com.ufes.compiler.lexicon.instructions;
+
+import com.ufes.compiler.lexicon.instructions.Else;
+import com.ufes.compiler.lexicon.LexiconHandler;
+import static com.ufes.compiler.lexicon.LexiconHandler.similarity;
+import com.ufes.compiler.model.Token;
+
+/**
+ *
+ * @author fs1609
+ */
+public class Then extends LexiconHandler {
+    public Then(Token token) {
+        super(token);
+    }
+    
+    @Override
+    public String getLexicalErrors(Token token) {
+        if(similarity(token.getSymbol(), "then") > 0.7)
+            return "Token pode ser substituido pela then";
+        else if(similarity(token.getSymbol(), "then") > 0.5)
+            return "Token similar a then "+ next.getLexicalErrors(token);
+        
+        return next.getLexicalErrors(token);
+    }
+    
+    @Override
+    public void execute(Token token) {
+        if (token.getSymbol().toLowerCase().compareTo("then") == 0) 
+            token.setCategory("then");
+        else this.setNext(new Write(token));
+    }    
+    
+}

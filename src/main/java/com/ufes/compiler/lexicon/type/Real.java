@@ -20,7 +20,7 @@ public class Real extends LexiconHandler {
 
     @Override
     public java.lang.String getLexicalErrors(Token token) {
-        if(similarity(token.getSymbol(), "int") > 0.7)
+        if(similarity(token.getSymbol(), "real") > 0.7)
             return "Token pode ser substituido por REAL ";
         else if(similarity(token.getSymbol(), "int") > 0.5)
             return "Token semelhante a REAL; "+ next.getLexicalErrors(token);
