@@ -23,35 +23,28 @@ import javax.swing.tree.DefaultTreeModel;
  * @author Lucas
  */
 public class Syntatic {
-    
     private MainView view;
-    private List<Token> tokensOriginais;    //Tokens após a análise léxica. São guardados já que a análise sintática modificará a lista
-    private List<Token> tokens;             //Tokens usados na análise sintática 
+    private List<Token> tokensOriginais;
+    private List<Token> tokens;            
     private JTree arvoreSintatica;
     private ArrayList<DefaultMutableTreeNode> listaNo;
     private ErrorCollection handlerErros;
-    
-    //Variáveis auxiliares
     private Token tokenAnalisado;
     private ArrayList<Token> pilhaBloco;
 
     public Syntatic(MainView view) {
         this.view = view;
         listaNo = new ArrayList<>();
-        
     }
     
-    public ErrorCollection analiseSintatica(List<Token> tokens, ErrorCollection erros){
+    public ErrorCollection syntaxAnalisys(List<Token> tokens, ErrorCollection erros){
         this.tokens = new ArrayList<Token>();
         this.tokens.addAll(tokens);
         this.tokensOriginais = tokens;
         this.handlerErros = erros;
-        
         this.createArvoreSintatica();
         pilhaBloco = new ArrayList<>();
-        
         this.analisarToken();
-        
         if(!pilhaBloco.isEmpty()){
             this.msgErro("<}>");
         }
@@ -62,33 +55,21 @@ public class Syntatic {
         return handlerErros;
     }
     
-    
-    /*
-        Método responsável por gerar uma nova JTree, que irá exibir os resultados da análise sintática
-    */
     private void createArvoreSintatica() {
-        
         DefaultMutableTreeNode no = new DefaultMutableTreeNode("Programa");
         DefaultTreeModel model = new DefaultTreeModel(no);
-        
         LookAndFeel previousLF = UIManager.getLookAndFeel();
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             arvoreSintatica = new JTree(model);
             UIManager.setLookAndFeel(previousLF);
             arvoreSintatica.putClientProperty("JTree.lineStyle", "Angled");
-            
         } catch (Exception e) {
             JOptionPane.showConfirmDialog(this.view,"Error: "+e.getMessage(), "Erro ao criar a árvore sintática", JOptionPane.ERROR_MESSAGE);
         }
-
-        // O primeiro nó
         listaNo.add(no);
-
         JScrollPane blocoArvoreSintatica = new JScrollPane(arvoreSintatica);
         blocoArvoreSintatica.setViewportView(arvoreSintatica);
-
-        //Se não existe a aba, crie, caso contrário, sobrescreva
         if(this.view.getTabPanelResultados().getTabCount() <= 1){
             this.view.getTabPanelResultados().add("Árvore de Análise Sintática", blocoArvoreSintatica);
         }else{
@@ -97,7 +78,6 @@ public class Syntatic {
         }
         arvoreSintatica.setShowsRootHandles(true);
     }
-    
     
     private DefaultMutableTreeNode inserirNovoNo(DefaultMutableTreeNode pai, String filho) {
         DefaultMutableTreeNode novo = new DefaultMutableTreeNode(filho);
@@ -142,20 +122,15 @@ public class Syntatic {
                 analisarToken();
             }
         }
-         
         if(!this.tokens.isEmpty()){
             analisarToken();
         }
     }
     
-    //Esses métodos são específicos para cada tipos de Token diferente
     private boolean programa() throws Exception {
-
         if (!this.tokens.isEmpty()) {
             if (especificador()) {
-                
                 if (tipo()) {
-                    
                     if (id()) {
                         programa2();
                     } else {
@@ -164,33 +139,25 @@ public class Syntatic {
                 } else {
                     this.msgErro("<tipo>");
                 }
-                
                 return true;
-                
             } else if (tipo()) {
-                
                 if (id()) {
                     programa2();
                 } else {
                     this.msgErro("<identificador>");
                 }
-                
                 return true;
-                
             } else if (define()) {
                 programa();
-                
                 return true;
             }
         }
-
         return false;
     }
 
     private void programa2() throws Exception {
         if (!this.tokens.isEmpty()) {
             inserirNovoNo(listaNo.get(listaNo.size() - 1), "<programa2>");
-            //Se for um ; a execução seguirá normalmente
             if (abreParentese()) {
                 parametros();
                 if (fechaParentese()) {
@@ -208,7 +175,6 @@ public class Syntatic {
             listaNo.remove(listaNo.size() - 1);
             programa();
         }
-        
     }
 
     private void listaID() throws Exception {
@@ -268,7 +234,6 @@ public class Syntatic {
     }
 
     private boolean parametros() throws Exception {
-
         if (!this.tokens.isEmpty()) {
             inserirNovoNo(listaNo.get(listaNo.size() - 1), "<listaParametros>");
             if (tipo()) {
@@ -276,7 +241,6 @@ public class Syntatic {
                     continuaParametros();
                     listaNo.remove(listaNo.size() - 1);
                     return true;
-                    
                 } else {
                     msgErro("<identificador>");
                 }
@@ -414,7 +378,6 @@ public class Syntatic {
             }
             listaNo.remove(listaNo.size() - 1);
         }
-
         return retorno;
     }
 
@@ -597,11 +560,9 @@ public class Syntatic {
             inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprUnary>");
             if ((operadorAritmeticoDeSoma()) || (operadorAritmeticoDeSubtracao())) {
                 continuaExpressaoUnaria();
-                
                 listaNo.remove(listaNo.size() - 1);
                 return true;
             }
-            
         }
         return false;
     }
@@ -651,7 +612,6 @@ public class Syntatic {
             }
             listaNo.remove(listaNo.size() - 1);
         }
-
         return retorno;
     }
 
@@ -711,7 +671,6 @@ public class Syntatic {
 
     private boolean define() throws Exception {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
             switch (tokenAnalisado.getCategory()) {
@@ -744,10 +703,8 @@ public class Syntatic {
 
     private boolean operadorExpressaoBinaria() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "operador_aritmetico_soma":
                 case "operador_aritmetico_subtracao":
@@ -805,16 +762,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean operadorAritmeticoDeSoma() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "operador_aritmetico_soma":
                     this.tokens.remove(0);
@@ -826,16 +780,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean operadorAritmeticoDeSubtracao() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "operador_aritmetico_subtracao":
                     this.tokens.remove(0);
@@ -847,16 +798,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean operadorDeAtribuicao() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "operador_atribuicao_igual":
                 case "operador_atribuicao_multiplicacao_igual":
@@ -873,17 +821,14 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean literal() {
         boolean retorno = false;
         Token temp;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             if (tokenAnalisado.getCategory().equals("delimitador_literal_aspas")) {
                 this.tokens.remove(0);
                 tokenAnalisado = this.tokens.get(0);
@@ -902,16 +847,13 @@ public class Syntatic {
                 }
             }
         }
-
         return retorno;
     }
 
     private boolean instrucaoIF() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_if":
                     this.tokens.remove(0);
@@ -923,16 +865,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean instrucaoELSE() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_else":
                     this.tokens.remove(0);
@@ -944,16 +883,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean instrucaoBreak() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_break":
                     this.tokens.remove(0);
@@ -965,16 +901,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean instrucaoPrintf() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_printf":
                     this.tokens.remove(0);
@@ -986,16 +919,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean instrucaoScanf() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_scanf":
                     this.tokens.remove(0);
@@ -1007,16 +937,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean instrucaoReturn() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_return":
                     this.tokens.remove(0);
@@ -1028,16 +955,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean especificador() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "Especificador_AUTO":
                 case "Especificador_STATIC":
@@ -1052,16 +976,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean tipo() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "Especificador_VOID":
                 case "Especificador_CHAR":
@@ -1088,16 +1009,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean inteiro() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "Especificador_SHORT":
                 case "Especificador_INT":
@@ -1111,39 +1029,31 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean delimitadorInstrucaoPontoEVirgula() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "delimitador_instrucao_ponto_e_virgula":
                     this.tokens.remove(0);
-                    
                     inserirNovoNo(listaNo.get(listaNo.size() - 1), "<delimitadorPontoEVirgula>");
                     inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
                     listaNo.remove(listaNo.size() - 1);
                     listaNo.remove(listaNo.size() - 1);
-                    
                     retorno = true;
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean separadorVirgula() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "separador_virgula":
                     this.tokens.remove(0);
@@ -1155,16 +1065,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean abreColchete() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_abre_colchete":
                     this.tokens.remove(0);
@@ -1176,16 +1083,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean fechaColchete() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_fecha_colchete":
                     this.tokens.remove(0);
@@ -1197,16 +1101,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean abreParentese() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_abre_parentese":
                     this.tokens.remove(0);
@@ -1218,16 +1119,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean fechaParentese() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "instrucao_fecha_parentese":
                     this.tokens.remove(0);
@@ -1239,16 +1137,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean abreChave() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "delimitador_bloco_abre_chave":
                     this.tokens.remove(0);
@@ -1261,16 +1156,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean fechaChave() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "delimitador_bloco_fecha_chave":
                     this.tokens.remove(0);
@@ -1285,16 +1177,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean id() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "identificador":
                     this.tokens.remove(0);
@@ -1306,16 +1195,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean num() {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             switch (tokenAnalisado.getCategory()) {
                 case "digito":
                     this.tokens.remove(0);
@@ -1342,16 +1228,13 @@ public class Syntatic {
                     break;
             }
         }
-
         return retorno;
     }
 
     private boolean CRLF(int pLinha) {
         boolean retorno = false;
-
         if (!this.tokens.isEmpty()) {
             tokenAnalisado = this.tokens.get(0);
-
             if (tokenAnalisado.getLine().getPosition()!= pLinha) {
                 retorno = true;
                 inserirNovoNo(listaNo.get(listaNo.size() - 1), "<CRLF>");
@@ -1360,17 +1243,14 @@ public class Syntatic {
                 listaNo.remove(listaNo.size() - 1);
             }
         }
-
         return retorno;
     }
 
-    // Tenta recuperar após ocorrência de erro para continuar a análise
     private void recuperarErro() {
         if (!this.tokens.isEmpty()) {
             Token temp;
             temp = this.tokens.get(0);
             while ((!this.tokens.isEmpty()) && (!tokenSincronizador(temp))) {
-                //System.out.println("Removeu " + temp.getSimbolo() + " da linha " + temp.getLinha().getPosicao());
                 if (!this.tokens.isEmpty()) {
                     this.tokens.remove(0);
                 }
@@ -1381,19 +1261,15 @@ public class Syntatic {
             if (!this.tokens.isEmpty()) {
                 if (this.tokens.get(0).getSymbol().equals(";")) {
                     this.tokens.remove(0);
-                    //System.out.println("Removeu " + temp.getSimbolo() + " da linha " + temp.getLinha().getPosicao());
                 }
             }
         }
-
         inserirNovoNo(listaNo.get(listaNo.size() - 1), "<ERRO>");
         listaNo.remove(listaNo.size() - 1);
-
     }
 
     private boolean tokenSincronizador(Token pToken) {
         boolean retorno = false;
-
         switch (pToken.getCategory()) {
             case "delimitador_instrucao_ponto_e_virgula":
             case "define":
@@ -1418,16 +1294,13 @@ public class Syntatic {
                 retorno = true;
                 break;
         }
-
         return retorno;
     }
 
     private void msgErro(String simboloEsperado)  {
         if (tokenAnalisado != null && !tokenAnalisado.getCategory().equals("error")) {
-
             if (simboloEsperado.equals("<;>") || simboloEsperado.equals("<,> ou <;>") || simboloEsperado.equals("<}>")) {
                 this.handlerErros.addError(tokenAnalisado, "Erro sintático. Esperado '" + simboloEsperado + "'.");
-
             } else {
                 if (!this.tokens.isEmpty()) {
                     this.handlerErros.addError(tokenAnalisado, "Erro sintático para o token '" + tokenAnalisado.getSymbol()

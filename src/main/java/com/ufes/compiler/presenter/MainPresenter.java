@@ -11,6 +11,7 @@ import com.ufes.compiler.model.CodeLine;
 import com.ufes.compiler.model.ErrorCollection;
 import com.ufes.compiler.model.ErrorMessage;
 import com.ufes.compiler.model.Token;
+import com.ufes.compiler.syntatic.Syntatic;
 import com.ufes.compiler.view.MainView;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -117,6 +118,7 @@ public class MainPresenter {
         }
         this.tokens = this.chainAnaliseLexica(tokens);
         this.fillTable(tokens);
+        this.errorCollection = new Syntatic(view).syntaxAnalisys(tokens, errorCollection);
         this.fillErrorTable(tokens);
     }
     
