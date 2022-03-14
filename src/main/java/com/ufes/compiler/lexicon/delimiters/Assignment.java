@@ -10,7 +10,7 @@ import com.ufes.compiler.model.Token;
 
 /**
  *
- * @author fs1609
+ * @author  Lucas
  */
 public class Assignment extends LexiconHandler{
     

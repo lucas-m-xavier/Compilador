@@ -24,75 +24,75 @@ import javax.swing.tree.DefaultTreeModel;
  */
 public class Syntatic {
     private MainView view;
-    private List<Token> tokensOriginais;
+    private List<Token> originalTokens;
     private List<Token> tokens;            
-    private JTree arvoreSintatica;
-    private ArrayList<DefaultMutableTreeNode> listaNo;
-    private ErrorCollection handlerErros;
-    private Token tokenAnalisado;
-    private ArrayList<Token> pilhaBloco;
+    private JTree syntaticTree;
+    private ArrayList<DefaultMutableTreeNode> nodeList;
+    private ErrorCollection handlerErrors;
+    private Token parsedToken;
+    private ArrayList<Token> stackBlock;
 
     public Syntatic(MainView view) {
         this.view = view;
-        listaNo = new ArrayList<>();
+        nodeList = new ArrayList<>();
     }
     
-    public ErrorCollection syntaxAnalisys(List<Token> tokens, ErrorCollection erros){
+    public ErrorCollection syntaxAnalisys(List<Token> tokens, ErrorCollection errors){
         this.tokens = new ArrayList<Token>();
         this.tokens.addAll(tokens);
-        this.tokensOriginais = tokens;
-        this.handlerErros = erros;
-        this.createArvoreSintatica();
-        pilhaBloco = new ArrayList<>();
-        this.analisarToken();
-        if(!pilhaBloco.isEmpty()){
+        this.originalTokens = tokens;
+        this.handlerErrors = errors;
+        this.createSyntacticTree();
+        stackBlock = new ArrayList<>();
+        this.analyzeToken();
+        if(!stackBlock.isEmpty()){
             this.msgErro("<}>");
         }
-        for (int i = 0; i < arvoreSintatica.getRowCount(); i++) {
-            arvoreSintatica.expandRow(i);
-            arvoreSintatica.setShowsRootHandles(true);
+        for (int i = 0; i < syntaticTree.getRowCount(); i++) {
+            syntaticTree.expandRow(i);
+            syntaticTree.setShowsRootHandles(true);
         }
-        return handlerErros;
+        return handlerErrors;
     }
     
-    private void createArvoreSintatica() {
-        DefaultMutableTreeNode no = new DefaultMutableTreeNode("Programa");
+    private void createSyntacticTree() {
+        DefaultMutableTreeNode no = new DefaultMutableTreeNode("Program");
         DefaultTreeModel model = new DefaultTreeModel(no);
         LookAndFeel previousLF = UIManager.getLookAndFeel();
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-            arvoreSintatica = new JTree(model);
+            syntaticTree = new JTree(model);
             UIManager.setLookAndFeel(previousLF);
-            arvoreSintatica.putClientProperty("JTree.lineStyle", "Angled");
+            syntaticTree.putClientProperty("JTree.lineStyle", "Angled");
         } catch (Exception e) {
-            JOptionPane.showConfirmDialog(this.view,"Error: "+e.getMessage(), "Erro ao criar a árvore sintática", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showConfirmDialog(this.view,"Error: "+e.getMessage(), "Error creating syntax tree", JOptionPane.ERROR_MESSAGE);
         }
-        listaNo.add(no);
-        JScrollPane blocoArvoreSintatica = new JScrollPane(arvoreSintatica);
-        blocoArvoreSintatica.setViewportView(arvoreSintatica);
+        nodeList.add(no);
+        JScrollPane blocoArvoreSintatica = new JScrollPane(syntaticTree);
+        blocoArvoreSintatica.setViewportView(syntaticTree);
         if(this.view.getTabPanelResultados().getTabCount() <= 1){
             this.view.getTabPanelResultados().add("Árvore de Análise Sintática", blocoArvoreSintatica);
         }else{
-            this.view.getTabPanelResultados().removeTabAt(1);   //Considerando que será a segunda aba do PanelGroup
+            this.view.getTabPanelResultados().removeTabAt(1);
             this.view.getTabPanelResultados().add("Árvore de Análise Sintática", blocoArvoreSintatica);
         }
-        arvoreSintatica.setShowsRootHandles(true);
+        syntaticTree.setShowsRootHandles(true);
     }
     
-    private DefaultMutableTreeNode inserirNovoNo(DefaultMutableTreeNode pai, String filho) {
+    private DefaultMutableTreeNode insertNewNode(DefaultMutableTreeNode pai, String filho) {
         DefaultMutableTreeNode novo = new DefaultMutableTreeNode(filho);
         pai.add(novo);
-        listaNo.add(novo);
+        nodeList.add(novo);
         return novo;
     }
     
-    private void analisarToken(){
+    private void analyzeToken(){
          try {
-            if (!programa()) {
-                if (!instrucao()) {
-                    if (tokenAnalisado.getSymbol().equals("}")) {
-                        if (!pilhaBloco.isEmpty()) {
-                            pilhaBloco.remove(0);
+            if (!program()) {
+                if (!instruction()) {
+                    if (parsedToken.getSymbol().equals("}")) {
+                        if (!stackBlock.isEmpty()) {
+                            stackBlock.remove(0);
                             this.tokens.remove(0);
                         } else {
                             this.msgErro(null);
@@ -104,64 +104,50 @@ public class Syntatic {
                     }
                     recuperarErro();
                     while (!this.tokens.isEmpty()) {
-                        analisarToken();
+                        analyzeToken();
                     }
                 } else {
                     while (!this.tokens.isEmpty()) {
-                        analisarToken();
+                        analyzeToken();
                     }
                 }
             } else {
                 while (!this.tokens.isEmpty()) {
-                    analisarToken();
+                    analyzeToken();
                 }
             }
         } catch (Exception ex) {
             recuperarErro();
             while (!this.tokens.isEmpty()) {
-                analisarToken();
+                analyzeToken();
             }
         }
         if(!this.tokens.isEmpty()){
-            analisarToken();
+            analyzeToken();
         }
     }
     
-    private boolean programa() throws Exception {
+    private boolean program() throws Exception {
         if (!this.tokens.isEmpty()) {
-            if (especificador()) {
-                if (tipo()) {
-                    if (id()) {
-                        programa2();
-                    } else {
-                        this.msgErro("<identificador>");
-                    }
-                } else {
-                    this.msgErro("<tipo>");
-                }
-                return true;
-            } else if (tipo()) {
+            if (tipo()) {
                 if (id()) {
-                    programa2();
+                    program2();
                 } else {
                     this.msgErro("<identificador>");
                 }
-                return true;
-            } else if (define()) {
-                programa();
                 return true;
             }
         }
         return false;
     }
 
-    private void programa2() throws Exception {
+    private void program2() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<programa2>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<programa2>");
             if (abreParentese()) {
-                parametros();
+                params();
                 if (fechaParentese()) {
-                    bloco();
+                    codeBlock();
                 } else {
                     msgErro("<)>");
                 }
@@ -170,20 +156,20 @@ public class Syntatic {
                     msgErro("<;>");
                 }
             } else {
-                listaID();
+                idList();
             }
-            listaNo.remove(listaNo.size() - 1);
-            programa();
+            nodeList.remove(nodeList.size() - 1);
+            program();
         }
     }
 
-    private void listaID() throws Exception {
+    private void idList() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<listaID>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<listaID>");
             if (abreColchete()) {
                 if (num()) {
                     if (fechaColchete()) {
-                        declaracaoParam2();
+                        param2Statement();
                     } else {
                         msgErro("<]>");
                     }
@@ -191,72 +177,54 @@ public class Syntatic {
                     msgErro("<NUM>");
                 }
             } else {
-                declaracaoParam2();
+                param2Statement();
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
-    private void declaracaoParam2() throws Exception {
+    private void param2Statement() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<declaracaoParam2>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<declaracaoParam2>");
             if (separadorVirgula()) {
                 if (id()) {
-                    listaID();
+                    idList();
                 } else {
                     this.msgErro("<identificador>");
                 }
             } else if (!delimitadorInstrucaoPontoEVirgula()) {
                 msgErro("<,> ou <;>");
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }else{
             msgErro("<,> ou <;>");
         }
     }
 
-    private void continuaAtribuicaoID() throws Exception {
+    private boolean params() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<continuaAtribuicaoID>");
-            if (!delimitadorInstrucaoPontoEVirgula()) {
-                if (separadorVirgula()) {
-                    if (id()) {
-                        listaID();
-                    } else {
-                        this.msgErro("<identificador>");
-                    }
-                } else {
-                    this.msgErro("<,> ou <;>");
-                }
-            }
-            listaNo.remove(listaNo.size() - 1);
-        }
-    }
-
-    private boolean parametros() throws Exception {
-        if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<listaParametros>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<listaParametros>");
             if (tipo()) {
                 if (id()) {
-                    continuaParametros();
-                    listaNo.remove(listaNo.size() - 1);
+                    params2();
+                    nodeList.remove(nodeList.size() - 1);
                     return true;
                 } else {
                     msgErro("<identificador>");
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
         return false;
     }
 
-    private void continuaParametros() throws Exception {
+    private void params2() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<listaParamRestante>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<listaParamRestante>");
             if (abreColchete()) {
                 if (num()) {
                     if (fechaColchete()) {
-                        listaParametros();
+                        paramList();
                     } else {
                         msgErro("<]>");
                     }
@@ -264,72 +232,66 @@ public class Syntatic {
                     msgErro("<NUM>");
                 }
             } else {
-                listaParametros();
+                paramList();
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
-    private void listaParametros() throws Exception {
+    private void paramList() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<listaParametros>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<listaParametros>");
             if (separadorVirgula()) {
-                if (!parametros()) {
+                if (!params()) {
                     this.msgErro("<tipo>");
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
-    private boolean bloco() throws Exception {
+    private boolean codeBlock() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<bloco>");
-            if (abreChave()) {
-                conteudoDeBloco();
-                if (!fechaChave()) {
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<bloco>");
+            if (begin()) {
+                blockContent();
+                if (!end() || !endPonto()) {
                     this.msgErro("<}>");
                 }
-                listaNo.remove(listaNo.size() - 1);
+                nodeList.remove(nodeList.size() - 1);
                 return true;
                 
             } else if (!delimitadorInstrucaoPontoEVirgula()) {
                 this.msgErro("<{> ou <;>");
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
         return false;
     }
 
-    private void conteudoDeBloco() throws Exception {
+    private void blockContent() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<conjuntoInst>");
-            if (instrucao() || programa()) {
-                conteudoDeBloco();
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<conjuntoInst>");
+            if (instruction() || program()) {
+                blockContent();
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
-    private boolean instrucao() throws Exception {
+    private boolean instruction() throws Exception {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucoes>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucoes>");
             if (id()) {
-                continuaInstrucoes();
+                instruction2();
                 if (!delimitadorInstrucaoPontoEVirgula()) {
                     this.msgErro("<;>");
                 }
                 retorno = true;
-            } else if (instrucaoReturn()) {
-                continuaInstrucoesEspecificas();
-                if (!delimitadorInstrucaoPontoEVirgula()) {
-                    msgErro("<;>");
-                }
-                retorno = true;
-            } else if (instrucaoPrintf()) {
+            } else if (instrucaoWriteln()) {
                 if (abreParentese()) {
-                    continuaInstrucoesEspecificas();
+                    idInstructionParameters2();
                     if (fechaParentese()) {
                         if (!delimitadorInstrucaoPontoEVirgula()) {
                             msgErro("<;>");
@@ -341,7 +303,39 @@ public class Syntatic {
                     msgErro("<(>");
                 }
                 retorno = true;
-            } else if (instrucaoScanf()) {
+            } else if (instrucaoWrite()) {
+                if (abreParentese()) {
+                    idInstructionParameters2();
+                    if (fechaParentese()) {
+                        if (!delimitadorInstrucaoPontoEVirgula()) {
+                            msgErro("<;>");
+                        }
+                    } else {
+                        msgErro("<)>");
+                    }
+                } else {
+                    msgErro("<(>");
+                }
+                retorno = true;
+            } else if (var()) {
+                retorno = true;
+            } else if (instrucaoReadln()) {
+                if (abreParentese()) {
+                    idInstructionParameters2();
+                    if (fechaParentese()) {
+                        if (!delimitadorInstrucaoPontoEVirgula()) {
+                            msgErro("<;>");
+                        }
+                    } else {
+                        msgErro("<)>");
+                    }
+                } else {
+                    msgErro("<(>");
+                }
+                retorno = true;
+            } else if (programInstruction()) {
+                retorno = true;
+            } else if (instrucaoRead()) {
                 if (abreParentese()) {
                     if (id()) {
                         if (fechaParentese()) {
@@ -358,11 +352,6 @@ public class Syntatic {
                     msgErro("<(>");
                 }
                 retorno = true;
-            } else if (instrucaoBreak()) {
-                if (!delimitadorInstrucaoPontoEVirgula()) {
-                    msgErro("<;>");
-                }
-                retorno = true;
             } else if (instrucaoIF()) {
                 if (abreParentese()) {
                     parametrosIF();
@@ -376,14 +365,14 @@ public class Syntatic {
                 }
                 retorno = true;
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
         return retorno;
     }
 
-    private void continuaInstrucoes() throws Exception {
+    private void instruction2() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<expressao>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<expressao>");
             if (abreColchete()) {
                 if (num()) {
                     if (fechaColchete()) {
@@ -399,7 +388,7 @@ public class Syntatic {
                     this.msgErro("<NUM>");
                 }
             } else if (abreParentese()) {
-                parametrosInstrucaoID();
+                idInstructionParameters();
                 if (!fechaParentese()) {
                     this.msgErro(")");
                 }
@@ -408,15 +397,15 @@ public class Syntatic {
             } else {
                 this.msgErro("<atribuicao>, <[> ou <(>");
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
-    private void parametrosInstrucaoID() throws Exception {
+    private void idInstructionParameters() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucoes>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucoes>");
             if (abreParentese()) {
-                parametrosInstrucaoID();
+                idInstructionParameters();
                 if (!fechaParentese()) {
                     this.msgErro(")");
                 }
@@ -425,15 +414,15 @@ public class Syntatic {
                     expressaoBinaria();
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
-    private void continuaInstrucoesEspecificas() throws Exception {
+    private void idInstructionParameters2() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucoes>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucoes>");
             if (abreParentese()) {
-                continuaInstrucoesEspecificas();
+                idInstructionParameters2();
                 if (!fechaParentese()) {
                     this.msgErro(")");
                 }
@@ -444,13 +433,13 @@ public class Syntatic {
                     this.msgErro("<exprUnary>, <operador> ou <(>");
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private void parametrosIF() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucoesIF>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucoesIF>");
             if (abreParentese()) {
                 parametrosIF();
                 if (!fechaParentese()) {
@@ -463,16 +452,16 @@ public class Syntatic {
                     this.msgErro("<exprUnary>, <operador> ou <(>");
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private void continuaInstrucaoIF() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucoesIF>");
-            if (!programa()) {
-                if (!instrucao()) {
-                    if (bloco()) {
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucoesIF>");
+            if (!program()) {
+                if (!instruction()) {
+                    if (codeBlock()) {
                         continuaBlocoInstrucaoIF();
                     } else {
                         this.msgErro("<programa>, <bloco> ou <instrucao>");
@@ -483,37 +472,37 @@ public class Syntatic {
             } else {
                 continuaBlocoInstrucaoIF();
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private void continuaBlocoInstrucaoIF() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucoesIF>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucoesIF>");
             if (instrucaoELSE()) {
                 continuaInstrucaoELSE();
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private void continuaInstrucaoELSE() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucoesELSE>");
-            if (!instrucao()) {
-                if (!programa()) {
-                    if (!bloco()) {
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucoesELSE>");
+            if (!instruction()) {
+                if (!program()) {
+                    if (!codeBlock()) {
                         this.msgErro("<programa>, <bloco>, <instrucao>");
                     }
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private void atribuicao() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<atribuicao>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<atribuicao>");
             if (abreParentese()) {
                 atribuicao();
                 if (!fechaParentese()) {
@@ -528,39 +517,39 @@ public class Syntatic {
                     }
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private void expressaoBinaria() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<expr>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<expr>");
             if (operadorExpressaoBinaria()) {
                 operandoExpressaoBinaria();
                 expressaoBinaria();
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private void operandoExpressaoBinaria() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<expr>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<expr>");
             if (!operando()) {
                 if (!expressaoUnaria()) {
                     this.msgErro("<primary> ou <exprUnary>");
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private boolean expressaoUnaria() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprUnary>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<exprUnary>");
             if ((operadorAritmeticoDeSoma()) || (operadorAritmeticoDeSubtracao())) {
                 continuaExpressaoUnaria();
-                listaNo.remove(listaNo.size() - 1);
+                nodeList.remove(nodeList.size() - 1);
                 return true;
             }
         }
@@ -569,7 +558,7 @@ public class Syntatic {
 
     private void continuaExpressaoUnaria() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprParenthesis>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<exprParenthesis>");
             if (abreParentese()) {
                 continuaExpressaoUnariaParenteses();
                 if (!fechaParentese()) {
@@ -578,13 +567,13 @@ public class Syntatic {
             } else {
                 operando();
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private void continuaExpressaoUnariaParenteses() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<expr>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<expr>");
             if (!expressaoUnaria()) {
                 if (operando()) {
                     expressaoBinaria();
@@ -592,14 +581,14 @@ public class Syntatic {
                     this.msgErro("<exprUnary> ou <primary>");
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private boolean operando() throws Exception {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<primary>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<primary>");
             if (num()) {
                 retorno = true;
             } else if (literal()) {
@@ -610,14 +599,14 @@ public class Syntatic {
                     continuaOperandoID();
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
         return retorno;
     }
 
     private void continuaOperandoID() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<primaryID>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<primaryID>");
             if (abreColchete()) {
                 if (num()) {
                     if (!fechaColchete()) {
@@ -632,13 +621,13 @@ public class Syntatic {
                     this.msgErro("<)>");
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
     }
 
     private boolean listaDeExpressao() throws Exception {
         boolean retorno = false;
-        inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprList>");
+        insertNewNode(nodeList.get(nodeList.size() - 1), "<exprList>");
         if (abreParentese()) {
             listaDeExpressao();
             retorno = true;
@@ -653,112 +642,80 @@ public class Syntatic {
             continuaListaDeExpressao();
             retorno = true;
         }
-        listaNo.remove(listaNo.size() - 1);
+        nodeList.remove(nodeList.size() - 1);
         return retorno;
     }
 
     private void continuaListaDeExpressao() throws Exception {
         if (!this.tokens.isEmpty()) {
-            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprListTail>");
+            insertNewNode(nodeList.get(nodeList.size() - 1), "<exprListTail>");
             if (separadorVirgula()) {
                 if (!listaDeExpressao()) {
                     this.msgErro("<exprUnary>, <primary>");
                 }
             }
-            listaNo.remove(listaNo.size() - 1);
+            nodeList.remove(nodeList.size() - 1);
         }
-    }
-
-    private boolean define() throws Exception {
-        boolean retorno = false;
-        if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "define":
-                    this.tokens.remove(0);
-                    retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<define>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "#define");
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
-                    if (id()) {
-                        if (num()) {
-                            if (!this.tokens.isEmpty()) {
-                                if (!CRLF(tokenAnalisado.getLine().getPosition())) {
-                                    msgErro("<CRLF>");
-                                }
-                            }
-                        } else {
-                            msgErro("<NUM>");
-                        }
-                    } else {
-                        msgErro("<identificador>");
-                    }
-                    break;
-            }
-        }
-
-        return retorno;
     }
 
     private boolean operadorExpressaoBinaria() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "operador_aritmetico_soma":
-                case "operador_aritmetico_subtracao":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "+":
+                case "-":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprPlus2>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<exprPlus2>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
-                case "operador_aritmetico_multiplicacao":
-                case "operador_aritmetico_divisao":
+                case "*":
+                case "/":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprMult2>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<exprMult2>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
-                case "operador_comparacao_igual":
-                case "operador_comparacao_diferente":
+                case "==":
+                case "!=":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprEqual2>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<exprEqual2>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
-                case "operador_comparacao_menor":
-                case "operador_comparacao_maior":
-                case "operador_comparacao_menor_igual":
-                case "operador_comparacao_maior_igual":
+                case "<":
+                case ">":
+                case "<=":
+                case ">=":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprRelational2>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<exprRelational2>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
-                case "operador_logico_or":
+                case "or":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprOr>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<exprOr>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
-                case "operador_logico_and":
+                case "and":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<exprAnd>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<exprAnd>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -768,15 +725,15 @@ public class Syntatic {
     private boolean operadorAritmeticoDeSoma() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "operador_aritmetico_soma":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "+":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<operadorAritmeticoDeSoma>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<operadorAritmeticoDeSoma>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -786,15 +743,15 @@ public class Syntatic {
     private boolean operadorAritmeticoDeSubtracao() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "operador_aritmetico_subtracao":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "-":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<operadorAritmeticoDeSubtracao>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<operadorAritmeticoDeSubtracao>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -804,20 +761,15 @@ public class Syntatic {
     private boolean operadorDeAtribuicao() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "operador_atribuicao_igual":
-                case "operador_atribuicao_multiplicacao_igual":
-                case "operador_atribuicao_divisao_igual":
-                case "operador_atribuicao_percente_igual":
-                case "operador_atribuicao_mais_igual":
-                case "operador_atribuicao_menos_igual":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case ":=":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<operadorAtrib>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<operadorAtrib>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -828,20 +780,20 @@ public class Syntatic {
         boolean retorno = false;
         Token temp;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            if (tokenAnalisado.getCategory().equals("delimitador_literal_aspas")) {
+            parsedToken = this.tokens.get(0);
+            if (parsedToken.getCategory().equals("ASPAS")) {
                 this.tokens.remove(0);
-                tokenAnalisado = this.tokens.get(0);
-                if (tokenAnalisado.getCategory().equals("identificador")) {
+                parsedToken = this.tokens.get(0);
+                if (parsedToken.getCategory().equals("identificador")) {
                     this.tokens.remove(0);
-                    temp = tokenAnalisado;
-                    tokenAnalisado = this.tokens.get(0);
-                    if (tokenAnalisado.getCategory().equals("delimitador_literal_aspas")) {
+                    temp = parsedToken;
+                    parsedToken = this.tokens.get(0);
+                    if (parsedToken.getCategory().equals("ASPAS")) {
                         this.tokens.remove(0);
-                        inserirNovoNo(listaNo.get(listaNo.size() - 1), "<literal>");
-                        inserirNovoNo(listaNo.get(listaNo.size() - 1), "'" + tokenAnalisado.getSymbol()+ "'");
-                        listaNo.remove(listaNo.size() - 1);
-                        listaNo.remove(listaNo.size() - 1);
+                        insertNewNode(nodeList.get(nodeList.size() - 1), "<literal>");
+                        insertNewNode(nodeList.get(nodeList.size() - 1), "'" + parsedToken.getSymbol()+ "'");
+                        nodeList.remove(nodeList.size() - 1);
+                        nodeList.remove(nodeList.size() - 1);
                         retorno = true;
                     }
                 }
@@ -853,15 +805,15 @@ public class Syntatic {
     private boolean instrucaoIF() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_if":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "if":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoIF>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<IF>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -871,108 +823,105 @@ public class Syntatic {
     private boolean instrucaoELSE() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_else":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "else":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoIF>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<ELSE>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
         return retorno;
     }
 
-    private boolean instrucaoBreak() {
+    private boolean instrucaoWriteln() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_break":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "writeln":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoBreak>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoWriteln>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
+                    break;
+            }
+        }
+        return retorno;
+    }
+    
+    private boolean instrucaoWrite() {
+        boolean retorno = false;
+        if (!this.tokens.isEmpty()) {
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "write":
+                    this.tokens.remove(0);
+                    retorno = true;
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoWrite>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
+                    break;
+            }
+        }
+        return retorno;
+    }
+    
+    private boolean instrucaoRead() {
+        boolean retorno = false;
+        if (!this.tokens.isEmpty()) {
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "read":
+                    this.tokens.remove(0);
+                    retorno = true;
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoRead>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
         return retorno;
     }
 
-    private boolean instrucaoPrintf() {
+    private boolean instrucaoReadln() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_printf":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "readln":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoPrintf>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoReadln>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
         return retorno;
     }
-
-    private boolean instrucaoScanf() {
+    
+    private boolean var() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_scanf":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "var":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoScanf>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
-                    break;
-            }
-        }
-        return retorno;
-    }
-
-    private boolean instrucaoReturn() {
-        boolean retorno = false;
-        if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_return":
-                    this.tokens.remove(0);
-                    retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoReturn>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
-                    break;
-            }
-        }
-        return retorno;
-    }
-
-    private boolean especificador() {
-        boolean retorno = false;
-        if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "Especificador_AUTO":
-                case "Especificador_STATIC":
-                case "Especificador_EXTERN":
-                case "Especificador_CONST":
-                    this.tokens.remove(0);
-                    retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<especificador>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoVar>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -982,50 +931,19 @@ public class Syntatic {
     private boolean tipo() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "Especificador_VOID":
-                case "Especificador_CHAR":
-                case "Especificador_FLOAT":
-                case "Especificador_DOUBLE":
-                case "Especificador_SHORT":
-                case "Especificador_INT":
-                case "Especificador_LONG":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "CHAR":
+                case "REAL":
+                case "DOUBLE":
+                case "STRING":
+                case "INT":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<tipo>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
-                    break;
-                case "sinalizador_tipo_signed":
-                case "sinalizador_tipo_unsigned":
-                    this.tokens.remove(0);
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<tipo>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
-                    retorno = inteiro();
-                    break;
-            }
-        }
-        return retorno;
-    }
-
-    private boolean inteiro() {
-        boolean retorno = false;
-        if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "Especificador_SHORT":
-                case "Especificador_INT":
-                case "Especificador_LONG":
-                    this.tokens.remove(0);
-                    retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<inteiro>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<tipo>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -1035,14 +953,14 @@ public class Syntatic {
     private boolean delimitadorInstrucaoPontoEVirgula() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "delimitador_instrucao_ponto_e_virgula":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "PONTO_E_VIRGULA":
                     this.tokens.remove(0);
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<delimitadorPontoEVirgula>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<delimitadorPontoEVirgula>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     retorno = true;
                     break;
             }
@@ -1053,15 +971,15 @@ public class Syntatic {
     private boolean separadorVirgula() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "separador_virgula":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case ",":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<separadorVirgula>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<separadorVirgula>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -1071,15 +989,15 @@ public class Syntatic {
     private boolean abreColchete() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_abre_colchete":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "[":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoAbreColchete>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoAbreColchete>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -1089,15 +1007,33 @@ public class Syntatic {
     private boolean fechaColchete() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_fecha_colchete":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "]":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoFechaConlchete>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoFechaConlchete>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
+                    break;
+            }
+        }
+        return retorno;
+    }
+    
+    private boolean then() {
+        boolean retorno = false;
+        if (!this.tokens.isEmpty()) {
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "then":
+                    this.tokens.remove(0);
+                    retorno = true;
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoThen>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -1107,15 +1043,15 @@ public class Syntatic {
     private boolean abreParentese() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_abre_parentese":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "(":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoAbreParensete>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoAbreParensete>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -1125,55 +1061,97 @@ public class Syntatic {
     private boolean fechaParentese() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "instrucao_fecha_parentese":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case ")":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoFechaParentese>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoFechaParentese>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
         return retorno;
     }
 
-    private boolean abreChave() {
+    private boolean begin() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "delimitador_bloco_abre_chave":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "begin":
                     this.tokens.remove(0);
                     retorno = true;
-                    pilhaBloco.add(tokenAnalisado);
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoAbreChave>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    stackBlock.add(parsedToken);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoBegin>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
         return retorno;
     }
 
-    private boolean fechaChave() {
+    private boolean end() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
-                case "delimitador_bloco_fecha_chave":
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "end":
                     this.tokens.remove(0);
                     retorno = true;
-                    if (!pilhaBloco.isEmpty()) {
-                        pilhaBloco.remove(0);
+                    if (!stackBlock.isEmpty()) {
+                        stackBlock.remove(0);
                     }
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<instrucaoFechaChave>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoEnd>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
+                    break;
+            }
+        }
+        return retorno;
+    }
+    
+    private boolean endPonto() {
+        boolean retorno = false;
+        if (!this.tokens.isEmpty()) {
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "end.":
+                    this.tokens.remove(0);
+                    retorno = true;
+                    if (!stackBlock.isEmpty()) {
+                        stackBlock.remove(0);
+                    }
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoEnd>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
+                    break;
+            }
+        }
+        return retorno;
+    }
+    
+    private boolean programInstruction() {
+        boolean retorno = false;
+        if (!this.tokens.isEmpty()) {
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
+                case "program":
+                    this.tokens.remove(0);
+                    retorno = true;
+                    if (!stackBlock.isEmpty()) {
+                        stackBlock.remove(0);
+                    }
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<instrucaoProgram>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -1183,15 +1161,15 @@ public class Syntatic {
     private boolean id() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
                 case "identificador":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<identificador>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<identificador>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
             }
         }
@@ -1201,28 +1179,28 @@ public class Syntatic {
     private boolean num() {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            switch (tokenAnalisado.getCategory()) {
+            parsedToken = this.tokens.get(0);
+            switch (parsedToken.getCategory()) {
                 case "digito":
                     this.tokens.remove(0);
                     retorno = true;
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), "<NUM>");
-                    inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol());
-                    listaNo.remove(listaNo.size() - 1);
-                    listaNo.remove(listaNo.size() - 1);
+                    insertNewNode(nodeList.get(nodeList.size() - 1), "<NUM>");
+                    insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol());
+                    nodeList.remove(nodeList.size() - 1);
+                    nodeList.remove(nodeList.size() - 1);
                     break;
-                case "operador_aritmetico_subtracao":
-                case "operador_aritmetico_soma":
+                case "-":
+                case "+":
                     if (!this.tokens.isEmpty()) {
                         Token temp = this.tokens.get(1);
                         if (temp.getCategory().equals("digito")) {
                             this.tokens.remove(0);
                             this.tokens.remove(0);
                             retorno = true;
-                            inserirNovoNo(listaNo.get(listaNo.size() - 1), "<NUM>");
-                            inserirNovoNo(listaNo.get(listaNo.size() - 1), tokenAnalisado.getSymbol()+ temp.getSymbol());
-                            listaNo.remove(listaNo.size() - 1);
-                            listaNo.remove(listaNo.size() - 1);
+                            insertNewNode(nodeList.get(nodeList.size() - 1), "<NUM>");
+                            insertNewNode(nodeList.get(nodeList.size() - 1), parsedToken.getSymbol()+ temp.getSymbol());
+                            nodeList.remove(nodeList.size() - 1);
+                            nodeList.remove(nodeList.size() - 1);
                         }
                     }
                     break;
@@ -1234,13 +1212,13 @@ public class Syntatic {
     private boolean CRLF(int pLinha) {
         boolean retorno = false;
         if (!this.tokens.isEmpty()) {
-            tokenAnalisado = this.tokens.get(0);
-            if (tokenAnalisado.getLine().getPosition()!= pLinha) {
+            parsedToken = this.tokens.get(0);
+            if (parsedToken.getLine().getPosition()!= pLinha) {
                 retorno = true;
-                inserirNovoNo(listaNo.get(listaNo.size() - 1), "<CRLF>");
-                inserirNovoNo(listaNo.get(listaNo.size() - 1), "\\n");
-                listaNo.remove(listaNo.size() - 1);
-                listaNo.remove(listaNo.size() - 1);
+                insertNewNode(nodeList.get(nodeList.size() - 1), "<CRLF>");
+                insertNewNode(nodeList.get(nodeList.size() - 1), "\\n");
+                nodeList.remove(nodeList.size() - 1);
+                nodeList.remove(nodeList.size() - 1);
             }
         }
         return retorno;
@@ -1264,33 +1242,27 @@ public class Syntatic {
                 }
             }
         }
-        inserirNovoNo(listaNo.get(listaNo.size() - 1), "<ERRO>");
-        listaNo.remove(listaNo.size() - 1);
+        insertNewNode(nodeList.get(nodeList.size() - 1), "<ERRO>");
+        nodeList.remove(nodeList.size() - 1);
     }
 
     private boolean tokenSincronizador(Token pToken) {
         boolean retorno = false;
         switch (pToken.getCategory()) {
-            case "delimitador_instrucao_ponto_e_virgula":
-            case "define":
-            case "Especificador_AUTO":
-            case "Especificador_STATIC":
-            case "Especificador_EXTERN":
-            case "Especificador_CONST":
-            case "Especificador_VOID":
-            case "Especificador_CHAR":
-            case "Especificador_FLOAT":
-            case "Especificador_DOUBLE":
-            case "Especificador_SHORT":
-            case "Especificador_INT":
-            case "Especificador_LONG":
-            case "sinalizador_tipo_signed":
-            case "sinalizador_tipo_unsigned":
-            case "instrucao_return":
-            case "instrucao_printf":
-            case "instrucao_scanf":
-            case "instrucao_break":
-            case "instrucao_if":
+            case "PONTO_E_VIRGULA":
+            case "STRING":
+            case "CHAR":
+            case "REAL":
+            case "DOUBLE":
+            case "INT":
+            case "writeln":
+            case "readln":
+            case "write":
+            case "read":
+            case "begin":
+            case "end":
+            case "end.":
+            case "IF":
                 retorno = true;
                 break;
         }
@@ -1298,17 +1270,17 @@ public class Syntatic {
     }
 
     private void msgErro(String simboloEsperado)  {
-        if (tokenAnalisado != null && !tokenAnalisado.getCategory().equals("error")) {
+        if (parsedToken != null && !parsedToken.getCategory().equals("error")) {
             if (simboloEsperado.equals("<;>") || simboloEsperado.equals("<,> ou <;>") || simboloEsperado.equals("<}>")) {
-                this.handlerErros.addError(tokenAnalisado, "Erro sintático. Esperado '" + simboloEsperado + "'.");
+                this.handlerErrors.addError(parsedToken, "Erro sintático. Esperado '" + simboloEsperado + "'.");
             } else {
                 if (!this.tokens.isEmpty()) {
-                    this.handlerErros.addError(tokenAnalisado, "Erro sintático para o token '" + tokenAnalisado.getSymbol()
-                        + "'. Esperado " + simboloEsperado + ", encontrado '" + tokenAnalisado.getCategory()+ "'.");
+                    this.handlerErrors.addError(parsedToken, "Erro sintático para o token '" + parsedToken.getSymbol()
+                        + "'. Esperado " + simboloEsperado + ", encontrado '" + parsedToken.getCategory()+ "'.");
                 }
             }
         } else {
-            this.handlerErros.addError(null, "Erro sintático: Alguma instrução está faltando. "
+            this.handlerErrors.addError(null, "Erro sintático: Alguma instrução está faltando. "
                         + ". Esperado " + simboloEsperado);
         }
     }

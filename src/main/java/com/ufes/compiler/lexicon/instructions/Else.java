@@ -32,6 +32,6 @@ public class Else  extends LexiconHandler {
     public void execute(Token token) {
         if (token.getSymbol().toLowerCase().compareTo("else") == 0) 
             token.setCategory("else");
-        else this.setNext(new Division(token));
+        else this.setNext(new If(token));
     }    
 }

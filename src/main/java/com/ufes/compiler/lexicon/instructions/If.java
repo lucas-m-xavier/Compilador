@@ -6,31 +6,32 @@ package com.ufes.compiler.lexicon.instructions;
 
 import com.ufes.compiler.lexicon.LexiconHandler;
 import static com.ufes.compiler.lexicon.LexiconHandler.similarity;
+import com.ufes.compiler.lexicon.arithmetic.Division;
 import com.ufes.compiler.model.Token;
 
 /**
  *
- * @author fs1609
+ * @author L
  */
-public class And extends LexiconHandler {
-    public And(Token token) {
+public class If extends LexiconHandler{
+    public If(Token token) {
         super(token);
     }
     
     @Override
     public String getLexicalErrors(Token token) {
-        if(similarity(token.getSymbol(), "and") > 0.7)
-            return "Token pode ser substituido pela and";
-        else if(similarity(token.getSymbol(), "and") > 0.5)
-            return "Token similar a and "+ next.getLexicalErrors(token);
+        if(similarity(token.getSymbol(), "if") > 0.7)
+            return "Token pode ser substituido pela else";
+        else if(similarity(token.getSymbol(), "if") > 0.5)
+            return "Token similar a else "+ next.getLexicalErrors(token);
         
         return next.getLexicalErrors(token);
     }
     
     @Override
     public void execute(Token token) {
-        if (token.getSymbol().toLowerCase().compareTo("and") == 0) 
-            token.setCategory("and");
-        else this.setNext(new Or(token));
-    }    
+        if (token.getSymbol().toLowerCase().compareTo("if") == 0) 
+            token.setCategory("if");
+        else this.setNext(new Division(token));
+    }
 }

@@ -10,27 +10,27 @@ import com.ufes.compiler.model.Token;
 
 /**
  *
- * @author fs1609
+ * @author L
  */
-public class And extends LexiconHandler {
-    public And(Token token) {
+public class Or extends LexiconHandler{
+    public Or(Token token) {
         super(token);
     }
     
     @Override
     public String getLexicalErrors(Token token) {
-        if(similarity(token.getSymbol(), "and") > 0.7)
-            return "Token pode ser substituido pela and";
-        else if(similarity(token.getSymbol(), "and") > 0.5)
-            return "Token similar a and "+ next.getLexicalErrors(token);
+        if(similarity(token.getSymbol(), "or") > 0.7)
+            return "Token pode ser substituido pela or";
+        else if(similarity(token.getSymbol(), "or") > 0.5)
+            return "Token similar a or "+ next.getLexicalErrors(token);
         
         return next.getLexicalErrors(token);
     }
     
     @Override
     public void execute(Token token) {
-        if (token.getSymbol().toLowerCase().compareTo("and") == 0) 
-            token.setCategory("and");
-        else this.setNext(new Or(token));
+        if (token.getSymbol().toLowerCase().compareTo("or") == 0) 
+            token.setCategory("or");
+        else this.setNext(new Then(token));
     }    
 }
